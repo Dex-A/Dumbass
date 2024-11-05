@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adaptive Dot Explorer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      margin: 0;
+      position: relative;
+    }
+
+    #dot {
+      width: 20px;
+      height: 20px;
+      background-color: black;
+      border-radius: 50%;
+      position: absolute;
+      top: 50px;
+      left: 50px;
+    }
+
+    .wall {
+      width: 50px;
+      height: 50px;
+      position: absolute;
+    }
+
+    .brown-wall {
+      background-color: sienna;
+    }
+
+    .gray-wall {
+      background-color: gray;
+    }
+
+    #inputArea {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-top: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    #message {
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<div id="dot"></div>
+<div id="inputArea">
+  <input type="text" id="inputText" placeholder="Type here to communicate with the dot..." autocomplete="off" style="width: 80%;">
+  <button onclick="sendMessage()">Send</button>
+  <p id="message">The dot is exploring...</p>
+</div>
+
+<script>
+  const dot = document.getElementById("dot");
+  let walls = [];
+  let knowledge = {};
+
+  let dotSpeed = 1.5;
+  let direction = { x: 1, y: 1 };
+
+  // Make the dot roam around
+  function moveDot() {
+    const dotRect = dot.getBoundingClientRect();
+
+    for (let wall of walls) {
+      let wallRect = wall.getBoundingClientRect();
+      if (dotRect.right > wallRect.left && dotRect.left < wallRect.right &&
+          dotRect.bottom > wallRect.top && dotRect.top < wallRect.bottom) {
+        
+        // Check wall type based on user-defined "knowledge"
+        if (wall.classList.contains("brown-wall") && knowledge["brown walls are breakable"]) {
+          // "Break" the wall by removing it
+          wall.remove();
+          walls = walls.filter(w => w !== wall);
+          document.getElementById("message").textContent = "The dot has broken a brown wall!";
+        } else {
+          // Bounce off wall
+          direction.x = -direction.x;
+          direction.y = -direction.y;
+        }
+        break;
+      }
+    }
+
+    // Update dot position
+    dot.style.left = dot.offsetLeft + direction.x * dotSpeed + "px";
+    dot.style.top = dot.offsetTop + direction.y * dotSpeed + "px";
+
+    // Screen boundaries
+    if (dot.offsetLeft <= 0 || dot.offsetLeft >= window.innerWidth - dot.offsetWidth) {
+      direction.x = -direction.x;
+    }
+    if (dot.offsetTop <= 0 || dot.offsetTop >= window.innerHeight - dot.offsetHeight) {
+      direction.y = -direction.y;
+    }
+  }
+
+  // Start roaming
+  setInterval(moveDot, 30);
+
+  // Add walls on click
+  document.addEventListener("click", function(e) {
+    const wallType = Math.random() > 0.5 ? "brown-wall" : "gray-wall";
+    let wall = document.createElement("div");
+    wall.classList.add("wall", wallType);
+    wall.style.left = e.pageX - 25 + "px";
+    wall.style.top = e.pageY - 25 + "px";
+    document.body.appendChild(wall);
+    walls.push(wall);
+  });
+
+  // Handle messages from the user
+  function sendMessage() {
+    const input = document.getElementById("inputText").value.toLowerCase();
+    document.getElementById("inputText").value = "";
+
+    // Parse user input as "knowledge"
+    if (input.includes("brown walls are breakable")) {
+      knowledge["brown walls are breakable"] = true;
+      document.getElementById("message").textContent = "The dot has learned that brown walls are breakable!";
+    } else if (input.includes("speed up")) {
+      dotSpeed = 3;
+      document.getElementById("message").textContent = "The dot is speeding up!";
+    } else if (input.includes("slow down")) {
+      dotSpeed = 1;
+      document.getElementById("message").textContent = "The dot is slowing down.";
+    } else {
+      document.getElementById("message").textContent = "The dot didn't understand your message.";
+    }
+  }
+</script>
+
+</body>
+</html>
